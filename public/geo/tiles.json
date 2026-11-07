@@ -1,0 +1,24 @@
+{
+ "hawassa": {
+  "south": 6.87,
+  "west": 38.3,
+  "north": 7.23,
+  "east": 38.66
+ },
+ "region": {
+  "south": 6.05,
+  "west": 37.48,
+  "north": 8.05,
+  "east": 39.48
+ },
+ "ethiopia": {
+  "south": 3.2,
+  "west": 32.8,
+  "north": 15.2,
+  "east": 48.2
+ },
+ "attribution": {
+  "sat": "Sentinel-2 cloudless 2020 by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2020), CC BY-NC-SA 4.0",
+  "osm": "(c) OpenStreetMap contributors"
+ }
+}

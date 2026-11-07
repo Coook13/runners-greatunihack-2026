@@ -1,0 +1,7 @@
+node_modules/
+dist/
+data-raw/
+demo/out/
+.claude/
+*.log
+.DS_Store
