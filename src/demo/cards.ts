@@ -23,7 +23,8 @@ const CSS = `
 .rn-demo-row.rn-hot b { color: #ef8f7a; }
 .rn-demo-note { font-size: 14px; color: #b7c2bc; font-style: italic; padding-top: 6px; }
 .rn-demo-clip { left: 364px; top: 96px; width: 420px; }
-.rn-demo-chain { right: 404px; top: 96px; width: 470px; }
+.rn-demo-chain { left: 50%; top: 26%; transform: translate(-50%, 6px); width: min(720px, 90vw); }
+.rn-demo-chain.rn-on { transform: translate(-50%, 0); }
 .rn-demo-chain ol { margin: 0; padding-left: 22px; font-size: 15px; line-height: 1.5; font-variant-numeric: tabular-nums; }
 .rn-demo-chain li.rn-hot { color: #ef8f7a; font-weight: 700; }
 .rn-demo-score { left: 50%; top: 14%; width: min(860px, 92vw); transform: translate(-50%, 6px); }
@@ -84,7 +85,7 @@ export const createClipboardCard = () => makeCard<ClipboardData>('rn-demo-clip',
 });
 
 // ---------- glass box fallback: one crate's chain of custody ----------
-export interface ChainData { packageId: string; receipts: Receipt[]; lossAt?: number }
+export interface ChainData { packageId: string; receipts: Receipt[]; lossAt?: number; heading?: string }
 
 /** Receipts for one crate in custody order, with the index of the first weight drop (or -1). */
 export function custodyChain(receipts: Receipt[], packageId: string): { chain: Receipt[]; dropAt: number } {
@@ -95,7 +96,8 @@ export function custodyChain(receipts: Receipt[], packageId: string): { chain: R
 
 export const createChainCard = () => makeCard<ChainData>('rn-demo-chain', (root, d) => {
   const { chain, dropAt } = custodyChain(d.receipts, d.packageId);
-  root.append(el('h2', 'rn-runners', `Glass box: crate ${d.packageId}`));
+  root.append(el('h2', 'rn-runners', d.heading ?? 'Signed custody history'));
+  root.append(el('div', 'rn-demo-note', `Crate ${d.packageId}`));
   const ol = el('ol');
   chain.forEach((r, i) => {
     const kg = Math.round(r.measuredKg * 100) / 100;
@@ -110,11 +112,11 @@ export const createChainCard = () => makeCard<ChainData>('rn-demo-chain', (root,
 });
 
 // ---------- close: today vs Runners ----------
-export interface ScoreSide { delivered: number; reachPct: number; duringOutage: number | null; named: number; exposure: number | null }
+export interface ScoreSide { delivered: number; duringOutage: number | null; named: number; losses: number; breach: BreachDump | null }
 export interface ScoreData { today: ScoreSide | null; runners: ScoreSide }
 
 export const createScoreboard = () => makeCard<ScoreData>('rn-demo-score', (root, d) => {
-  root.append(el('h2', '', 'Same requests, same events'));
+  root.append(el('h2', '', 'Results from this simulation'));
   const t = el('table');
   const head = el('tr');
   head.append(el('th', ''), ...(d.today ? [el('th', 'rn-today', 'Today')] : []), el('th', 'rn-runners', 'Runners'));
@@ -128,9 +130,13 @@ export const createScoreboard = () => makeCard<ScoreData>('rn-demo-score', (root
   };
   const n = (v: number | null) => (v === null ? '-' : String(Math.round(v)));
   line('Delivered intact', (s) => n(s.delivered));
-  line('Requests reached, %', (s) => n(s.reachPct));
-  line('Delivered while the network was down', (s) => n(s.duringOutage));
-  line('Losses with the holder named', (s) => n(s.named));
-  line('Exposure of one stolen device', (s) => n(s.exposure));
+  line('Losses detected', (s) => `${n(Math.min(s.named, s.losses))} / ${n(s.losses)}`);
+  line('Data exposed', (s) => {
+    if (!s.breach) return 'Not tested';
+    const x = exposure(s.breach);
+    return `${x.storeLocations} stores / ${x.beneficiaryNotes} notes`;
+  });
   root.append(t);
+  root.append(el('div', 'rn-demo-note', `During the tower outage: ${d.today ? `central ${n(d.today.duringOutage)}, ` : ''}Runners ${n(d.runners.duringOutage)} intact deliveries.`));
+  root.append(el('div', 'rn-demo-note', 'Detected losses have a named holder. Data = store locations / clinic notes on the breached device.'));
 });

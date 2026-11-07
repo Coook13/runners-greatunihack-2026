@@ -4,7 +4,7 @@ import { card, el } from './dom';
 import { exposure, exposureLines } from './format';
 
 export function createBreachCard() {
-  const c = card('Breach result');
+  const c = card('Data exposed');
 
   function side(name: string, cls: string, d: BreachDump | null): HTMLElement {
     const box = el('div', `rn-side-col ${cls}`);
@@ -15,9 +15,6 @@ export function createBreachCard() {
     }
     const e = exposure(d);
     box.append(el('div', 'rn-status', `Hacked device: ${d.nodeId}`));
-    const score = el('div', 'rn-score', String(e.score));
-    score.append(el('small', '', 'exposure score'));
-    box.append(score);
     const ul = el('ul');
     // The first three lines feed the score; colour them when they leak anything.
     const hot = [e.stores > 0, e.stock > 0, e.notes > 0, false, false];
@@ -29,8 +26,9 @@ export function createBreachCard() {
   return {
     root: c.root,
     show(mesh: BreachDump | null, central: BreachDump | null): void {
+      if (!mesh && !central) { c.hide(); return; }
       c.body.innerHTML = '';
-      c.body.append(el('div', 'rn-status', 'Exposure score = store locations + stock levels + clinic notes on children'));
+      c.body.append(el('div', 'rn-status', 'Information readable on the selected device. Clinic notes contain counts, never names.'));
       const sides = el('div', 'rn-sides');
       // Today left, Runners right: the same order as the maps on the compare page.
       sides.append(side('Today: central dispatch', 'rn-central', central), side('Runners', 'rn-mesh', mesh));

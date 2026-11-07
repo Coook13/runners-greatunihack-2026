@@ -31,7 +31,7 @@ export interface RendererLike {
 }
 
 /** UiApi plus the optional extras the WP6 Ui exposes. */
-export type UiLike = UiApi & { setTool?(t: Tool): void; setMode?(m: Mode | 'split'): void };
+export type UiLike = UiApi & { setTool?(t: Tool): void; setMode?(m: Mode | 'split'): void; closePanels?(): void };
 
 /** What src/ui/blackbox.ts's view.show() takes (id, kind, dump, logs, pos, t), plus the engine and snapshot. */
 export interface BlackBoxInfo { id: NodeId; kind: NodeState['kind']; dump: BreachDump; logs: string[]; pos?: Vec2; t?: number; engine: EngineApi; snapshot: Snapshot | null }
@@ -124,7 +124,7 @@ export function pickHandoffSoon(s: Snapshot | null | undefined): NodeId | null {
 
 /** A loaded rider (never a van): `prefer` if it still holds a crate, else the most loaded one. */
 export function pickRider(s: Snapshot | null | undefined, prefer?: NodeId | null): NodeId | null {
-  if (prefer && loadedIn(s, prefer)) return prefer;
+  if (prefer && isRider(kindOf(s, prefer)) && loadedIn(s, prefer)) return prefer;
   const riders = alive(s).filter((n) => isRider(n.kind));
   return riders.filter((n) => n.boxes.length > 0).sort(byLoadThenId)[0]?.id ?? riders.sort(byLoadThenId)[0]?.id ?? null;
 }
@@ -248,6 +248,7 @@ export function createDirector(opts: DirectorOptions): Director {
   // ---------- story state shared by the beats (cleared on reset) ----------
   const freshStory = () => ({
     van: null as NodeId | null,                         // today's van with the paperwork
+    breachVehicle: null as NodeId | null,               // compare the same last-mile role on both sides
     vehicle: null as NodeId | null,                     // Runners vehicle we skim and open
     follow: null as NodeId | null,                      // its black box keeps refreshing
     theftT: 0,
@@ -256,7 +257,7 @@ export function createDirector(opts: DirectorOptions): Director {
     watching: false,
     leakBeatReached: false,
     report: null as LedgerReport | null,
-    exposure: [null, null] as (number | null)[],        // [today, runners] exposure of one stolen device
+    breaches: [null, null] as (BreachDump | null)[],     // [today, runners] captured at the actual breach
     outageBase: [] as number[],
     outageDelivered: [] as (number | null)[],
   });
@@ -279,10 +280,14 @@ export function createDirector(opts: DirectorOptions): Director {
     cards().clip?.show({ vehicle: info.id, dump: info.dump, alertsNamingHolder: naming });
   };
   const showCaught = (a: Alert) => {
+    story.follow = null;
+    hideViews(); hideCards(); opts.ui?.closePanels?.();
     const suspect = a.suspect ?? a.reportedBy;
     focus(suspect);
     highlight([suspect], 'mesh');
     say(CAPTIONS.caught(a));
+    if (a.packageId) cards().chain?.show({ packageId: a.packageId,
+      receipts: eng(R())?.ledgerInput().receipts ?? [], heading: 'Loss detected' });
   };
 
   // ---------- the timeline ----------
@@ -343,6 +348,7 @@ export function createDirector(opts: DirectorOptions): Director {
     {
       id: 'black-box', atSec: 55, speed: 6, caption: CAPTIONS.blackBox(null), live: true,
       action: async () => {
+        hideCards(); opts.ui?.closePanels?.();
         story.follow = story.vehicle;
         focus(story.vehicle);
         highlight(story.vehicle ? [story.vehicle] : [], 'mesh');
@@ -363,14 +369,15 @@ export function createDirector(opts: DirectorOptions): Director {
       action: () => {
         story.watching = false;
         story.follow = null;
-        hideViews();
+        hideViews(); hideCards(); opts.ui?.closePanels?.();
         const ti = T();
-        const info = inspectInfo(ti, story.van ?? pickVan(snap(ti)));
+        story.breachVehicle = pickRider(snap(R()));
+        const info = inspectInfo(ti, story.breachVehicle);
         if (!info) return breachRunners();
         eng(ti)!.apply({ type: 'breach', target: info.id });
         opts.ui?.showBreach(null, info.dump);
         const x = exposure(info.dump);
-        story.exposure[0] = x.score;
+        story.breaches[0] = info.dump;
         focus(info.id, 'central');
         say(CAPTIONS.breachToday(x.storeLocations, x.beneficiaryNotes));
       },
@@ -379,7 +386,7 @@ export function createDirector(opts: DirectorOptions): Director {
     {
       id: 'network-down', atSec: 107, speed: 40, caption: CAPTIONS.networkDown,
       action: () => {
-        hideCards();
+        hideCards(); hideViews(); opts.ui?.showBreach(null, null); opts.ui?.closePanels?.();
         story.outageBase = engines().map((_, i) => delivered(i));
         mirror({ type: 'networkDown' });
         highlight([]);
@@ -425,15 +432,16 @@ export function createDirector(opts: DirectorOptions): Director {
     {
       id: 'scoreboard', atSec: 157, speed: 6, caption: CAPTIONS.score(null, { delivered: 0, named: 0 }), live: true,
       action: () => {
-        cards().chain?.hide();
+        hideCards(); hideViews(); opts.ui?.showBreach(null, null); opts.ui?.closePanels?.();
         const side = (i: number, which: 0 | 1): ScoreSide | null => {
           const s = snap(i);
           if (!s) return null;
-          return { delivered: s.metrics.deliveredIntact, reachPct: s.metrics.reachPct, named: s.metrics.leaksPinpointed,
-            duringOutage: story.outageDelivered[i] ?? null, exposure: story.exposure[which] };
+          return { delivered: s.metrics.deliveredIntact, named: s.metrics.leaksPinpointed,
+            losses: s.metrics.skimmed + s.metrics.stolen + s.metrics.deliveredShort,
+            duringOutage: story.outageDelivered[i] ?? null, breach: story.breaches[which] };
         };
         const today = side(T(), 0);
-        const runners = side(R(), 1) ?? { delivered: 0, reachPct: 0, named: 0, duringOutage: null, exposure: null };
+        const runners = side(R(), 1) ?? { delivered: 0, named: 0, losses: 0, duringOutage: null, breach: null };
         cards().board?.show({ today, runners });
         say(CAPTIONS.score(today, runners));
       },
@@ -445,21 +453,27 @@ export function createDirector(opts: DirectorOptions): Director {
 
   function breachRunners() {
     const ri = R();
-    const id = story.vehicle ?? pickRider(snap(ri));
+    // Breach a drone or motorbike: vans are the one tier allowed to know store locations, so they'd blur the point.
+    const s = snap(ri);
+    const nonVan = s?.nodes.filter((n) => (n.kind === 'drone' || n.kind === 'motorbike') && n.alive)
+      .sort((a, b) => b.boxes.length - a.boxes.length || (a.id < b.id ? -1 : 1))[0]?.id ?? null;
+    const id = story.breachVehicle ?? nonVan ?? pickRider(s);
     const info = inspectInfo(ri, id);
     if (!info) return;
     eng(ri)!.apply({ type: 'breach', target: info.id });
     const ti = T();
-    const todayDump = ti >= 0 ? inspectInfo(ti, story.van ?? pickVan(snap(ti)))?.dump ?? null : null;
+    const todayDump = story.breaches[0];
     opts.ui?.showBreach(info.dump, todayDump);
     const x = exposure(info.dump);
-    story.exposure[1] = x.score;
+    story.breaches[1] = info.dump;
     focus(info.id);
     highlight([info.id], 'mesh');
     say(CAPTIONS.breachRunners(x.storeLocations, x.beneficiaryNotes));
   }
 
   async function glassBox() {
+    hideCards(); hideViews(); opts.ui?.closePanels?.();
+    opts.ui?.showBreach(null, null);                    // one card at a time: close the breach card first
     const e = eng(R());
     if (!e) return;
     const input = e.ledgerInput();
@@ -495,6 +509,10 @@ export function createDirector(opts: DirectorOptions): Director {
   }
 
   function fire(beat: Beat) {
+    if (inBrowser) {
+      document.documentElement.dataset.demoBeat = beat.id;
+      window.dispatchEvent(new CustomEvent('runners:beat', { detail: { id: beat.id, elapsedSec: elapsed() } }));
+    }
     if (beat.speed !== undefined) opts.onSpeed?.(beat.speed);
     if (!beat.live) say(beat.caption);
     try {
@@ -561,6 +579,7 @@ export function createDirector(opts: DirectorOptions): Director {
     if (done) return;
     if (started) return resume();
     started = true; paused = false; banked = 0; runFrom = now();
+    opts.onPause?.(false);
     startTimer();
     fireDue();
   }

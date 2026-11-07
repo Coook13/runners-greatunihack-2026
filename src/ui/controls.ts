@@ -50,12 +50,12 @@ export function createControls(h: UiHandlers, initialSkimKg: number): Controls {
   const listeners: (() => void)[] = [];
   const changed = () => listeners.forEach((f) => f());
 
-  // ---------- network pill: the label is the action it will take ----------
+  // State is visible during the demo; the tooltip explains the click action.
   let networkUp = true;
   let holdUntil = 0; // after a click, trust the pill until the engine's snapshot catches up
   const net = el('button', 'rn-net');
   const paintNet = () => {
-    net.replaceChildren(el('span', 'rn-dot'), networkUp ? 'NETWORK DOWN' : 'NETWORK UP');
+    net.replaceChildren(el('span', 'rn-dot'), networkUp ? 'NETWORK ONLINE' : 'NETWORK OFFLINE');
     net.classList.toggle('rn-down', !networkUp);
     net.dataset.tip = networkUp ? 'Cell network is online. Click to take it down.' : 'Cell network is offline. Click to bring it back.';
   };

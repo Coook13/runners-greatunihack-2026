@@ -13,16 +13,16 @@ const kgText = (kg: number | undefined) => (kg === undefined ? 'some weight' : `
 export interface SideNumbers { delivered: number; named: number }
 
 export const CAPTIONS = {
-  hook: 'Food for starving children is being stolen and resold, mostly by people inside the supply chain.',
+  hook: 'Runners. Keep supplies moving when central communications fail.',
   map: 'Hawassa, Ethiopia, on real roads and satellite imagery. The deliveries are simulated.',
-  split: `${LAYOUT.today}: how aid moves today. ${LAYOUT.runners}: the same requests with Runners.`,
+  split: `${LAYOUT.today}: central dispatch. ${LAYOUT.runners}: independent agents. Same demand.`,
   single: 'Runners on the real roads of Hawassa. Every vehicle decides for itself.',
 
   // Today side
   clipboard: (van: string, stores: number) =>
     `Today, the paperwork on ${van} shows where each crate goes, and all ${stores} stores.`,
   theft: (kg: number) => `An insider takes ${kgText(kg)} from a crate. We run the same theft on both sides.`,
-  todayBlind: 'Today nobody is alerted. The loss waits for a stock count, with no name on it.',
+  todayBlind: 'Central dispatch has no signed hand-off history to identify the holder.',
 
   // Runners side
   blackBox: (id: string | null) =>
@@ -35,15 +35,15 @@ export const CAPTIONS = {
 
   // Hacker
   breachToday: (stores: number, notes: number) =>
-    `Steal the van's phone today: ${stores} store locations and ${notes} notes on children.`,
+    `Central device: ${stores} store locations and ${notes} clinic notes exposed.`,
   breachRunners: (stores: number, notes: number) =>
-    `Steal a Runners black box: ${stores} store locations and ${notes} notes on children. It only knows the next stop.`,
+    `Same last-mile device in Runners: ${stores} store locations and ${notes} clinic notes exposed.`,
 
   // Outage
   networkDown: 'Tower outage. The cell network is off on both sides.',
   swarm: (droneLinks: number) =>
     droneLinks > 0
-      ? `Drones now relay messages between vehicles: ${droneLinks} radio links run through them.`
+      ? 'Local radio connects nearby agents. Vehicles carry messages across disconnected areas.'
       : 'Vehicles carry the messages themselves while the towers are down.',
   outage: (runners: number, today: number | null) =>
     today !== null && runners > today
@@ -68,7 +68,7 @@ export const CAPTIONS = {
     today
       ? `Today: ${today.delivered} delivered intact, ${today.named} losses named. Runners: ${runners.delivered} delivered intact, ${runners.named} losses named.`
       : `Runners: ${runners.delivered} delivered intact, ${runners.named} losses named.`,
-  close: 'Every sachet reaches a clinic, or the ledger names the hand-off where it went missing.',
+  close: 'Local decisions. Signed custody. Delivery through disconnection.',
   title: 'Runners. GreatUniHack 2026, Neptune North track.',
 } as const;
 

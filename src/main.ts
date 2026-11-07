@@ -60,7 +60,7 @@ async function boot() {
   const mainCanvas = document.getElementById('scene') as HTMLCanvasElement;
   let sides: Side[] = [];
   let tool: Tool = 'select';
-  let paused = false;
+  let paused = q.get('capture') === '1';
   let pendingAttackLine = false;
   let pendingLedger = false;
 
@@ -82,12 +82,36 @@ async function boot() {
 
   // Playback: play/pause, speed presets up to 300x, skip ahead an hour, reset. The director owns keys in demo mode.
   const demoMode = !!(q.get('autoplay') || q.get('demo'));
+  document.documentElement.classList.toggle('rn-demo-mode', demoMode);
+  document.documentElement.classList.toggle('rn-capture', q.get('capture') === '1');
+  if (demoMode) {
+    const context = document.createElement('div');
+    context.className = 'rn-demo-context';
+    context.textContent = 'Hawassa, Ethiopia · Simulated deliveries';
+    uiRoot.append(context);
+    const heading = document.createElement('div');
+    heading.className = 'rn-demo-heading';
+    uiRoot.append(heading);
+    const chapters: Record<string, string> = {
+      intro: 'Coordination without a central connection', map: 'Real geography. Simulated operations.', split: 'Same demand. Two approaches.',
+      clipboard: 'Central dispatch', theft: 'Signed custody', 'today-blind': 'Signed custody',
+      'black-box': 'Local agent decisions', crew: 'Local agent decisions', handoff: 'Loss detection',
+      'breach-today': 'Device privacy', 'breach-runners': 'Device privacy',
+      'network-down': 'Offline coordination', swarm: 'Offline coordination', outage: 'Offline coordination',
+      'network-up': 'Records reconnect', ledger: 'Records reconnect', 'glass-box': 'Auditor access',
+      scoreboard: 'Measured outcomes', close: 'Keep working through disconnection', title: 'Runners', done: 'Runners',
+    };
+    window.addEventListener('runners:beat', (event) => {
+      const id = (event as CustomEvent<{ id: string }>).detail.id;
+      heading.textContent = chapters[id] ?? '';
+    });
+  }
   const playback = createPlayback(uiRoot, {
     onPlayPause: (p) => { paused = !p; },
     onSpeed: (x) => { speed = x; },
     onSkip: (sec) => { void skipAhead(sec); },
     onReset: () => { void rebuild(); },
-  }, { speed, playing: true, keys: !demoMode });
+  }, { speed, playing: !paused, keys: !demoMode });
   const sealedBoxes = (e: EngineApi) =>
     [...((e as unknown as { boxes?: Map<string, { cb: { box: SealedBox } }> }).boxes?.values() ?? [])].map((b) => b.cb).filter(Boolean);
   createAuditorButton(uiRoot, async () => {
@@ -282,6 +306,7 @@ async function boot() {
   }
 
   await rebuild();
+  await tickOnce();
   // Console / director hook: runners.select('moto-04', 'mesh')
   (window as unknown as { runners: unknown }).runners = {
     select: (id: NodeId, mode: Mode = 'mesh') => showInspect(id, sides.find((x) => x.mode === mode)),
@@ -315,6 +340,16 @@ async function boot() {
       onSpeed: (x: number) => { speed = x; playback.setSpeed(x); },
       onPause: (p: boolean) => { paused = p; playback.setPlaying(!p); },
       onReset: () => rebuild(),
+      showBlackBox: (info) => blackBox.show(info),
+      showGlassBox: (info) => {
+        if (!info) { glassBox.close(); return; }
+        const input = info.engine.ledgerInput();
+        void (async () => {
+          const report = info.report ?? await buildReport(input);
+          await glassBox.open({ report, receipts: input.receipts, boxes: sealedBoxes(info.engine),
+            auditorSealPriv: info.engine.auditorSealPriv(), signPubs: input.signPubs, packageId: info.packageId });
+        })();
+      },
       introCanvas,
       // Show the intro canvas only while the fly-in plays, then hand over to the live maps.
       playIntro: (async (c: HTMLCanvasElement, o: Record<string, unknown>) => {

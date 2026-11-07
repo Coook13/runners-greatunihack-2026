@@ -27,6 +27,7 @@ const MINIMAP_EVERY_MS = 66;
 const LEAK_POPUP_MS = 8000;     // a new loss opens the sidebar at the Leak Finder for this long
 
 export interface Ui extends UiApi {
+  closePanels(): void;
   /** kg the presenter typed for the skim tool; the lead reads it when the skim tool hits a carrier. */
   skimKg(): number;
   /** Keep the toolbar in sync when the lead changes tool or mode from a keyboard shortcut or the demo script. */
@@ -152,6 +153,7 @@ export function createUI(root: HTMLElement, h: UiHandlers): Ui {
     if (k === '?') help();
   });
   const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
+  const presentation = !!(q?.get('autoplay') || q?.get('demo'));
   if (!q?.get('autoplay') && !q?.get('demo')) setTimeout(help, 1200);
 
   // ---------- drawing: latest data, one redraw per frame budget ----------
@@ -197,7 +199,7 @@ export function createUI(root: HTMLElement, h: UiHandlers): Ui {
       if (fresh) {
         paintBadge();
         const glassOpen = !!root.querySelector('.sb-gb:not(.sb-hidden)');
-        if (!shell.hidden() && !glassOpen) shell.focus('leaks', { auto: true, ms: LEAK_POPUP_MS });
+        if (!presentation && !shell.hidden() && !glassOpen) shell.focus('leaks', { auto: true, ms: LEAK_POPUP_MS });
       }
       minimap.setVisible(!!o);
       dirty = true;
@@ -209,15 +211,15 @@ export function createUI(root: HTMLElement, h: UiHandlers): Ui {
     showBreach(mesh: BreachDump | null, central: BreachDump | null) {
       sweep.root.classList.add('rn-hidden');
       breach.show(mesh, central);
-      if (mesh) strip.setExposure('mesh', exposure(mesh).score);
-      if (central) strip.setExposure('central', exposure(central).score);
+      if (mesh) strip.setExposure('mesh', exposure(mesh));
+      if (central) strip.setExposure('central', exposure(central));
       dirty = true;
     },
     showLedger(r: LedgerReport) {
       ledger.show(r);
       leaks.addFindings(r.findings);
       paintBadge();
-      shell.focus('ledger');
+      if (!presentation) shell.focus('ledger');
     },
     showSweep(data: unknown) {
       // The lead calls this from the S key: a second press with the card up closes it.
@@ -231,6 +233,7 @@ export function createUI(root: HTMLElement, h: UiHandlers): Ui {
       attacks.showResult(line);
     },
     skimKg: () => controls.skimKg(),
+    closePanels: () => shell.close(),
     setTool: (t) => controls.setTool(t),
     setMode: (m) => controls.setMode(m),
   };

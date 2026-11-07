@@ -3,24 +3,22 @@
 import type { Metrics, Mode, Snapshot } from '../contracts/types';
 import { lossStats } from './beforeAfter';
 import { el } from './dom';
-import { int, pct } from './format';
+import { int, type Exposure } from './format';
 
 type Tone = '' | 'rn-good' | 'rn-bad';
 export interface LineItem { label: string; value: string; tone: Tone }
 
 /** The numbers that matter, in display order. Exposure appears once a device has been breached. Pure: unit-testable. */
-export function lineItems(m: Metrics, exposure: number | null): LineItem[] {
+export function lineItems(m: Metrics, exposure: Exposure | null): LineItem[] {
   const { losses, pinned } = lossStats(m);
   const items: LineItem[] = [
-    { label: 'Reach', value: pct(m.reachPct), tone: '' },
+    { label: 'Delivered intact', value: int(m.deliveredIntact), tone: '' },
     losses
-      ? { label: 'Losses named', value: `${pinned} of ${losses}`, tone: pinned >= losses ? 'rn-good' : 'rn-bad' }
-      : { label: 'Losses', value: '0', tone: '' },
+      ? { label: 'Losses detected', value: `${pinned} / ${losses}`, tone: pinned >= losses ? 'rn-good' : 'rn-bad' }
+      : { label: 'Losses detected', value: '0 / 0', tone: '' },
+    { label: 'Data exposed', value: exposure ? `${exposure.stores} stores / ${exposure.notes} notes` : 'Not tested',
+      tone: exposure ? (exposure.score > 0 ? 'rn-bad' : 'rn-good') : '' },
   ];
-  if (exposure !== null && Number.isFinite(exposure)) {
-    items.push({ label: 'Exposed if stolen', value: String(Math.round(exposure)), tone: exposure > 0 ? 'rn-bad' : 'rn-good' });
-  }
-  items.push({ label: 'Carriers', value: `${int(m.carriersAlive)}/${int(m.carriersTotal)}`, tone: '' });
   return items;
 }
 
@@ -29,7 +27,7 @@ export interface Strip {
   update(main: Snapshot, other?: Snapshot): void;
   render(): void;
   setSplit(split: boolean): void;
-  setExposure(mode: Mode, score: number | null): void;
+  setExposure(mode: Mode, data: Exposure | null): void;
   reset(): void;
 }
 
@@ -37,7 +35,7 @@ export function createStrip(): Strip {
   const root = el('div', 'rn-lines rn-single');
   const line = { central: el('div', 'rn-line rn-today rn-off'), mesh: el('div', 'rn-line rn-runners') };
   root.append(line.central, line.mesh);   // Today sits under the left map, Runners under the right
-  const exposure: Record<Mode, number | null> = { mesh: null, central: null };
+  const exposure: Record<Mode, Exposure | null> = { mesh: null, central: null };
   const last: Partial<Record<Mode, Metrics>> = {};
   let mainMode: Mode = 'mesh';
   let split = false;
@@ -52,9 +50,10 @@ export function createStrip(): Strip {
     painted[mode] = key;
     const l = line[mode];
     l.replaceChildren(el('span', 'rn-who', mode === 'mesh' ? 'Runners' : 'Today'));
-    items.forEach((it, i) => {
-      if (i) l.append(el('i', '', '·'));
-      l.append(it.label, el('b', it.tone, it.value));
+    items.forEach((it) => {
+      const metric = el('span', 'rn-kpi');
+      metric.append(el('span', 'rn-kpi-label', it.label), el('b', it.tone, it.value));
+      l.append(metric);
     });
   }
 

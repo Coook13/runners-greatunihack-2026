@@ -143,8 +143,15 @@ const CSS = `
 
 /* ---------- one line of numbers per side, just above the playback bar ---------- */
 .rn-lines { position: absolute; left: 0; right: 0; bottom: calc(var(--rn-gap) + var(--rn-pb-h) + 0.55em); display: flex; pointer-events: none; }
-.rn-line { --side: var(--rn-dim); flex: 1 1 0; min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  font-size: 0.9em; color: #c3ccc8; text-shadow: var(--rn-halo); padding: 0 1em; }
+.rn-line { --side: var(--rn-dim); flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3em 1em; margin: 0 0.7em; padding: 0.6em 1em; border-radius: 12px; background: rgba(9,16,14,.93);
+  border: 1px solid rgba(255,255,255,.14); font-size: 0.9em; color: #c3ccc8; }
+.rn-line .rn-who { grid-column: 1 / -1; }
+.rn-kpi { display: flex; flex-direction: column; min-width: 0; }
+.rn-kpi-label { font-size: 0.82em; color: #aab9b2; }
+.rn-line .rn-kpi b { margin: 0; font-size: 1.25em; white-space: nowrap; }
+.rn-line .rn-kpi:last-child b { font-size: 1em; padding-top: .25em; }
+@media(max-width: 900px) { .rn-line { gap: .4em; padding: .4em; font-size: .7em; } }
 .rn-line.rn-today { --side: var(--rn-today); }
 .rn-line.rn-runners { --side: var(--rn-runners); }
 .rn-lines.rn-single .rn-line.rn-off { display: none; }
@@ -312,7 +319,38 @@ html .rl.hub { color: #cfc4a2; background: rgba(12, 17, 16, 0.5); }
 html .rl.geo { color: rgba(185, 212, 228, 0.8); background: none; border: 0; backdrop-filter: none; }
 html .rl.node { color: #e3e9e6; background: rgba(12, 17, 16, 0.72); }
 html .rl.node.fake { background: rgba(130, 40, 32, 0.85); }
-.rn-demo-cap-wrap { bottom: calc(var(--rn-gap) + var(--rn-pb-h) + 3em) !important; }
+.rn-demo-cap-wrap { bottom: calc(var(--rn-gap) + var(--rn-pb-h) + 7em) !important; }
+
+/* Guided demo: one proof at a time; advanced tools remain in the drawer. */
+.rn-demo-context { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); z-index: 6;
+  font: 500 14px var(--rn-font); color: #c4d1cb; padding: 7px 14px; border-radius: 20px; background: rgba(9,16,14,.9); }
+.rn-demo-heading { position: absolute; top: 112px; left: 50%; transform: translateX(-50%); z-index: 6;
+  font: 650 30px var(--rn-font); color: white; text-align: center; text-shadow: 0 2px 12px #000; white-space: nowrap; }
+.rn-demo-mode .rl.village, .rn-demo-mode .rl.city, .rn-demo-mode .rl.small, .rn-demo-mode .rl.hamlet { display: none; }
+.rn-demo-mode .rn-host .sb-bb:not(.sb-inline) { top: 175px; width: min(620px, 85vw); }
+.rn-demo-mode .sb-bb-foot, .rn-demo-mode .sb-load, .rn-demo-mode .sb-crates { display: none; }
+.rn-demo-mode .rn-host .sb-bb:not(.sb-inline) .sb-bb-screen { max-height: 380px; }
+.rn-demo-mode .rn-card { top: 42%; background: rgba(9,16,14,.97); }
+.rn-demo-mode .rn-demo-card { background: rgba(9,16,14,.96); }
+.rn-demo-mode .rn-demo-clip { left: 50%; transform: translate(-50%, 6px); top: 190px; width: 600px; }
+.rn-demo-mode .rn-demo-clip.rn-on { transform: translate(-50%, 0); }
+.rn-demo-mode .rn-demo-score { top: 22%; }
+.rn-demo-mode .rn-demo-score td.rn-num { font-size: 28px; }
+.rn-demo-mode .rn-demo-chain ol { font-size: 22px; line-height: 1.8; }
+.rn-demo-mode .rn-demo-chain .rn-demo-note { font-size: 19px; }
+.rn-demo-mode .rn-host .sb-gb { top: 174px; bottom: 285px; }
+.rn-demo-mode .sb-gb-summary, .rn-demo-mode .sb-gb-list { display: none; }
+.rn-demo-mode .sb-gb-main { grid-template-columns: minmax(0, 1fr); }
+.rn-demo-mode .sb-gb-detail { grid-template-columns: 1fr 1.15fr; }
+.rn-demo-mode .sb-gb-detail > div { padding: 20px; }
+.rn-demo-mode .sb-stop { padding: 12px 0; }
+.rn-demo-mode .rn-demo-cap { font-size: 28px; padding: 12px 24px; }
+.rn-capture .pb, .rn-capture .rn-switch, .rn-capture .rn-iconbtn, .rn-capture .rn-chip { display: none !important; }
+.rn-capture .rn-lines { bottom: 46px; }
+.rn-capture .rn-demo-cap-wrap { bottom: 180px !important; }
+.rn-capture .rn-close, .rn-capture .sb-bb-status button, .rn-capture .sb-gb-head button { visibility: hidden; }
+[data-demo-beat="scoreboard"] .rn-lines, [data-demo-beat="close"] .rn-lines,
+[data-demo-beat="title"] .rn-lines, [data-demo-beat="done"] .rn-lines { visibility: hidden; }
 
 /* main.ts stopgap (#sb-toggle, #net-pill): this UI draws its own, so hide the duplicates while it is mounted. */
 html.rn-ready #sb-toggle, html.rn-ready #net-pill { display: none !important; }
