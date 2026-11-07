@@ -544,7 +544,7 @@ const videoPlaceholder = document.querySelector('#demo-placeholder');
 function showDemoVideo(source) {
   video.src = source; video.hidden = false; video.controls = true;
   videoPlaceholder.hidden = true;
-  const replace = document.querySelector('#replace-video'); if (replace) replace.hidden = false;
+  const replace = document.querySelector('#replace-video'); if (replace) replace.hidden = !source.startsWith('blob:');
   video.load();
 }
 video?.addEventListener('error', () => {
