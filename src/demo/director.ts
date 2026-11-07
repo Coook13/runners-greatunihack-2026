@@ -255,6 +255,7 @@ export function createDirector(opts: DirectorOptions): Director {
     targets: [] as (NodeId | null)[],
     leak: null as Alert | null,
     watching: false,
+    pendingSkim: false,
     leakBeatReached: false,
     report: null as LedgerReport | null,
     breaches: [null, null] as (BreachDump | null)[],     // [today, runners] captured at the actual breach
@@ -288,6 +289,22 @@ export function createDirector(opts: DirectorOptions): Director {
     say(CAPTIONS.caught(a));
     if (a.packageId) cards().chain?.show({ packageId: a.packageId,
       receipts: eng(R())?.ledgerInput().receipts ?? [], heading: 'Loss detected' });
+  };
+
+  // Queue the incident only when both runs actually have cargo in transit.
+  // Startup speed varies by machine; an empty carrier would silently ignore a skim.
+  const trySkim = () => {
+    const ri = R(), ti = T();
+    const targets = engines().map((_, i) =>
+      i === ti && loadedIn(snap(ti), story.van ?? '') ? story.van : pickHandoffSoon(snap(i)));
+    if (targets.some((id) => !id)) return;
+    story.targets = targets;
+    story.vehicle = targets[ri];
+    story.theftT = Math.max(...engines().map((_, i) => snap(i)?.t ?? 0));
+    story.pendingSkim = false;
+    story.watching = true;
+    mirror((i) => ({ type: 'skim', kg: SKIM_KG, target: targets[i]! }));
+    say(CAPTIONS.theft(SKIM_KG));
   };
 
   // ---------- the timeline ----------
@@ -330,17 +347,13 @@ export function createDirector(opts: DirectorOptions): Director {
       },
     },
     {
-      id: 'theft', atSec: 38, speed: 10, caption: CAPTIONS.theft(SKIM_KG),
+      id: 'theft', atSec: 38, speed: 10, caption: CAPTIONS.theft(SKIM_KG), live: true,
       action: () => {
-        const ri = R(), ti = T();
-        story.vehicle = pickHandoffSoon(snap(ri));
-        story.targets = engines().map((_, i) =>
-          i === ri ? story.vehicle : i === ti ? (loadedIn(snap(ti), story.van ?? '') ? story.van : pickHandoffSoon(snap(ti))) : null);
-        story.theftT = Math.max(snap(ri)?.t ?? 0, snap(ti)?.t ?? 0);
         story.leak = null;
-        story.watching = true;
+        story.pendingSkim = true;
+        say('Waiting for loaded carriers on both sides.');
         setTool('skim');
-        mirror((i) => ({ type: 'skim', kg: SKIM_KG, ...(story.targets[i] ? { target: story.targets[i]! } : {}) }));
+        trySkim();
         later(1500, () => setTool('select'));
       },
     },
@@ -554,6 +567,7 @@ export function createDirector(opts: DirectorOptions): Director {
   // Background jobs: keep the followed black box fresh; watch for the Leak Finder alert after the theft.
   function poll() {
     fireDue();
+    if (story.pendingSkim) trySkim();
     const ms = now();
     if (story.follow && ms - lastFollow >= FOLLOW_EVERY_MS) {
       lastFollow = ms;

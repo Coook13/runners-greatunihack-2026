@@ -67,7 +67,7 @@ function setup() {
     now: () => clock,
     log: (l) => logs.push(l),
   });
-  return { central, mesh, ui, captions, logs, black, glass, director, tick: (ms: number) => { clock += ms; } };
+  return { central, mesh, ui, captions, logs, black, glass, director, snaps, tick: (ms: number) => { clock += ms; } };
 }
 
 describe('timeline', () => {
@@ -97,6 +97,23 @@ describe('timeline', () => {
 });
 
 describe('controls', () => {
+  it('waits for cargo in both runs before injecting the same theft once', async () => {
+    vi.useFakeTimers();
+    const { director, central, mesh, snaps } = setup();
+    snaps[0].nodes.forEach((n) => { n.boxes = []; });
+    const theft = director.timeline.findIndex((b) => b.id === 'theft');
+    while (director.state().index <= theft) director.next();
+    expect(central.applied.filter((e) => e.type === 'skim')).toHaveLength(0);
+    expect(mesh.applied.filter((e) => e.type === 'skim')).toHaveLength(0);
+    snaps[0].nodes[0].boxes.push('loaded-later');
+    await vi.advanceTimersByTimeAsync(600);
+    const c = central.applied.filter((e) => e.type === 'skim');
+    const m = mesh.applied.filter((e) => e.type === 'skim');
+    expect(c).toHaveLength(1);
+    expect(m).toHaveLength(1);
+    expect(c[0]).toMatchObject({ target: 'van-01', kg: 1.2, t: m[0].t });
+  });
+
   it('next() advances one beat at a time and fires its events in every run', async () => {
     const { director, central, mesh, logs } = setup();
     expect(director.state().index).toBe(0);

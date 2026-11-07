@@ -322,7 +322,7 @@ html .rl.node.fake { background: rgba(130, 40, 32, 0.85); }
 .rn-demo-cap-wrap { bottom: calc(var(--rn-gap) + var(--rn-pb-h) + 7em) !important; }
 
 /* Guided demo: one proof at a time; advanced tools remain in the drawer. */
-.rn-demo-context { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); z-index: 6;
+.rn-demo-context { position: absolute; top: 22px; left: 135px; z-index: 6;
   font: 500 14px var(--rn-font); color: #c4d1cb; padding: 7px 14px; border-radius: 20px; background: rgba(9,16,14,.9); }
 .rn-demo-heading { position: absolute; top: 112px; left: 50%; transform: translateX(-50%); z-index: 6;
   font: 650 30px var(--rn-font); color: white; text-align: center; text-shadow: 0 2px 12px #000; white-space: nowrap; }
@@ -346,6 +346,7 @@ html .rl.node.fake { background: rgba(130, 40, 32, 0.85); }
 .rn-demo-mode .sb-stop { padding: 12px 0; }
 .rn-demo-mode .rn-demo-cap { font-size: 28px; padding: 12px 24px; }
 .rn-capture .pb, .rn-capture .rn-switch, .rn-capture .rn-iconbtn, .rn-capture .rn-chip { display: none !important; }
+.rn-capture .rn-demo-cap-wrap { display: none !important; }
 .rn-capture .rn-lines { bottom: 46px; }
 .rn-capture .rn-demo-cap-wrap { bottom: 180px !important; }
 .rn-capture .rn-close, .rn-capture .sb-bb-status button, .rn-capture .sb-gb-head button { visibility: hidden; }
