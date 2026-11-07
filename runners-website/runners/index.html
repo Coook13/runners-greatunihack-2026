@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f1e8" />
+    <meta name="description" content="Runners is a distributed relay for life-saving supplies. Follow a delivery through a world where the signal can stop, but the mission keeps moving." />
+    <title>Runners — The mission keeps moving.</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#start">Skip to the story</a>
+
+    <canvas id="scene" aria-label="A white delivery van travels a winding dirt road through a rural landscape as you scroll."></canvas>
+    <div class="scene-wash" aria-hidden="true"></div>
+    <svg id="route-svg" class="route-source" viewBox="0 0 1000 5000" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <filter id="road-grain"><feTurbulence type="fractalNoise" baseFrequency=".6" numOctaves="3" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0" /><feComposite in="SourceGraphic" operator="in" /></filter>
+      </defs>
+      <path class="route-edge" d="M 640 0 C 950 300 230 680 640 1000 S 960 1660 410 2000 S 170 2640 650 3000 S 960 3650 420 4000 S 160 4680 640 5000" />
+      <path id="route-path" d="M 640 0 C 950 300 230 680 640 1000 S 960 1660 410 2000 S 170 2640 650 3000 S 960 3650 420 4000 S 160 4680 640 5000" />
+    </svg>
+
+    <header class="site-header">
+      <a class="brand chapter-link" href="#start" data-index="0" aria-label="Runners, back to the beginning">
+        <svg class="brand-mark" viewBox="0 0 38 38" aria-hidden="true"><path d="M9 30V8h12c9 0 9 12 0 12h-7l14 10M9 20h12" /></svg>
+        <span>runners<span class="brand-period">.</span></span>
+      </a>
+      <div class="header-context"><span class="status-dot"></span> DISTRIBUTED BY DESIGN</div>
+      <button id="motion-toggle" class="motion-toggle" type="button" aria-pressed="false" title="Toggle reduced camera motion"><span aria-hidden="true">◉</span> <span>Reduce motion</span></button>
+    </header>
+
+    <nav class="chapter-nav" aria-label="Journey chapters">
+      <a class="chapter-link is-active" href="#start" data-index="0" aria-label="Chapter 1: The mission"><span>01</span><i></i></a>
+      <a class="chapter-link" href="#problem" data-index="1" aria-label="Chapter 2: The problem"><span>02</span><i></i></a>
+      <a class="chapter-link" href="#mesh" data-index="2" aria-label="Chapter 3: The mesh"><span>03</span><i></i></a>
+      <a class="chapter-link" href="#trust" data-index="3" aria-label="Chapter 4: The guarantees"><span>04</span><i></i></a>
+      <a class="chapter-link" href="#demo" data-index="4" aria-label="Chapter 5: The demo"><span>05</span><i></i></a>
+    </nav>
+
+    <div class="scene-annotation" aria-hidden="true">
+      <span class="annotation-bracket"></span>
+      <div><span class="micro-label">IN THE FIELD</span><p id="scene-caption">One sealed box. A shared destination.</p></div>
+    </div>
+
+    <main>
+      <section id="start" class="chapter chapter-hero" data-index="0" data-chapter="The mission" aria-labelledby="hero-title">
+        <div class="chapter-content">
+          <div class="eyebrow reveal"><span class="tiny-cross" aria-hidden="true">+</span> THE SIGNAL STOPS. THE MISSION DOESN’T.</div>
+          <h1 id="hero-title" class="reveal">Runners<span class="title-dot">.</span></h1>
+          <p class="hero-subtitle reveal">Design a system where multiple agents keep working toward a shared goal, even when communication fails</p>
+          <div class="hero-actions reveal">
+            <a href="#problem" data-index="1" class="button button-primary chapter-link">Begin the journey <span aria-hidden="true">↗</span></a>
+            <a href="#demo" data-index="4" class="text-link chapter-link">Watch the demo <span aria-hidden="true">↘</span></a>
+          </div>
+          <div class="hero-note reveal"><span class="coordinate-icon" aria-hidden="true">⌖</span><p>A shared purpose.<br /><strong>No central lifeline.</strong></p></div>
+        </div>
+        <div class="chapter-stamp" aria-hidden="true">FIELD NOTES / 001<br />NEPTUNE NORTH · GREATUNIHACK 2026</div>
+      </section>
+
+      <section id="problem" class="chapter chapter-problem" data-index="1" data-chapter="The problem" aria-labelledby="problem-title">
+        <div class="chapter-content">
+          <div class="eyebrow reveal"><span class="section-count">01 /</span> THE PROBLEM</div>
+          <h2 id="problem-title" class="reveal">It’s more than<br />a missing box.</h2>
+          <p class="section-lead reveal">It’s a child’s next meal.</p>
+          <p class="body-copy reveal">Life-saving therapeutic food for starving children is stolen and resold by people inside the supply chain. Knowing what’s in a box — and where it’s stored — makes it a target.</p>
+          <div class="field-note reveal"><span class="note-index">A</span><p>In remote districts, an unreliable signal makes every hand-off harder to coordinate and every loss harder to trace.</p></div>
+          <p class="section-footnote reveal">RUTF / Ready-to-use therapeutic food</p>
+        </div>
+      </section>
+
+      <section id="mesh" class="chapter chapter-mesh" data-index="2" data-chapter="The mesh" aria-labelledby="mesh-title">
+        <div class="chapter-content">
+          <div class="eyebrow reveal"><span class="section-count">02 /</span> THE SOLUTION</div>
+          <h2 id="mesh-title" class="reveal">No signal.<br />Still moving.</h2>
+          <p class="body-copy reveal">A mesh of vans, motorbikes and drones moves sealed boxes in relays. Each carrier chooses its next hand-off using the neighbours it can reach.</p>
+          <div class="carrier-list reveal" aria-label="The relay">
+            <div><span class="carrier-number">01</span><strong>Vans</strong><span>Store → relay</span></div>
+            <div><span class="carrier-number">02</span><strong>Motorbikes</strong><span>Relay → clinic</span></div>
+            <div><span class="carrier-number">03</span><strong>Drones</strong><span>The last stretch</span></div>
+          </div>
+          <button id="network-toggle" class="network-button reveal" type="button" aria-pressed="false"><span class="network-icon" aria-hidden="true"><i></i><i></i><i></i></span><span data-network-label>Cut the cell signal</span><span class="button-arrow" aria-hidden="true">↗</span></button>
+          <p class="section-footnote reveal">Illustrative scene · local decisions keep the relay moving</p>
+        </div>
+      </section>
+
+      <section id="trust" class="chapter chapter-trust" data-index="3" data-chapter="The guarantees" aria-labelledby="trust-title">
+        <div class="chapter-content">
+          <div class="eyebrow reveal"><span class="section-count">03 /</span> THE GUARANTEES</div>
+          <h2 id="trust-title" class="reveal">Carry the box.<br />Protect the story.</h2>
+          <p class="body-copy reveal">Carriers get the information their next hand-off needs. Three things stay protected.</p>
+          <ol class="secrets-list reveal">
+            <li><span>01</span><div><strong>What’s inside</strong><p>Uniform boxes. Sealed manifests.</p></div><span class="lock-icon" aria-hidden="true">⌑</span></li>
+            <li><span>02</span><div><strong>Where the stock sits</strong><p>Store access stays with the vans.</p></div><span class="lock-icon" aria-hidden="true">⌑</span></li>
+            <li><span>03</span><div><strong>Which children are enrolled</strong><p>Names stay inside the clinic.</p></div><span class="lock-icon" aria-hidden="true">⌑</span></li>
+          </ol>
+          <div class="ledger-note reveal"><div class="ledger-heading"><span class="status-dot"></span><strong>LEAK FINDER</strong><span>SIGNED + WEIGHED</span></div><p>Every hand-off leaves a receipt. When weights disagree, the ledger traces where the loss occurred.</p></div>
+        </div>
+      </section>
+
+      <section id="demo" class="chapter chapter-demo" data-index="4" data-chapter="The destination" aria-labelledby="demo-title">
+        <div class="demo-intro">
+          <div class="eyebrow reveal"><span class="section-count">04 /</span> THE DESTINATION</div>
+          <h2 id="demo-title" class="reveal">See the mission<br />come together.</h2>
+          <p class="reveal">The road ends here. The impact goes further.</p>
+        </div>
+        <div class="demo-slot reveal">
+          <div class="demo-slot-top"><span><span class="status-dot"></span> RUNNERS / THE DEMO</span><a class="demo-project-link" href="https://github.com/Coook13/runners-greatunihack-2026" target="_blank" rel="noopener noreferrer" aria-label="View the Runners demo repository on GitHub (opens in a new tab)">View demo on GitHub <span aria-hidden="true">↗</span></a></div>
+          <div class="video-surface">
+            <video id="demo-video" controls playsinline preload="metadata" hidden aria-label="Runners hackathon demo video"></video>
+            <div id="demo-placeholder" class="demo-placeholder">
+              <button id="choose-video" class="demo-play" type="button" aria-label="Choose a local demo video"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m12 7 14 9-14 9Z" /></svg></button>
+              <div><p>Your three-minute story.</p><span>Choose a local video to preview the demo.</span></div>
+              <input id="video-file" type="file" accept="video/*" hidden />
+            </div>
+          </div>
+          <div class="demo-slot-bottom"><span>BUILT FOR THE PLACES BETWEEN SIGNALS.</span><button id="replace-video" type="button" hidden>Replace local video</button><span>GREATUNIHACK 2026 ↗</span></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="journey-hud" aria-label="Journey progress">
+      <div class="hud-chapter"><span id="chapter-number">01</span><span class="hud-divider">/ 05</span><span id="chapter-name">The mission</span></div>
+      <div class="hud-progress"><div class="progress-track"><span id="scroll-progress"></span></div><span class="scroll-hint">SCROLL TO DRIVE <span aria-hidden="true">↓</span></span></div>
+      <div class="hud-status"><span class="status-dot"></span><span id="connection-status">LOCAL MESH ACTIVE</span><span class="hud-camera" id="camera-mode">AERIAL FOLLOW</span></div>
+    </footer>
+
+    <div id="scene-loader" class="scene-loader" role="status"><span class="loader-track"><i></i></span><span>Preparing the route</span></div>
+    <noscript><p class="noscript-note">Enable JavaScript to drive the 3D journey. The full project story is available below.</p></noscript>
+    <script src="vendor/gsap.min.js"></script>
+    <script src="vendor/ScrollTrigger.min.js"></script>
+    <script src="vendor/MotionPathPlugin.min.js"></script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

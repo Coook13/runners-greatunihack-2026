@@ -1,0 +1,4 @@
+GSAP 3.15.1
+Upstream license declaration: Standard 'no charge' license: https://gsap.com/standard-license.
+The upstream npm package supplies its license declaration in package.json.
+See gsap.package.json and gsap.README.md for the upstream license reference.
